@@ -1,0 +1,1 @@
+pip install Flask flask pydantic requests shortuuid Werkzeug git+https://github.com/XRPLF/xrpl-py

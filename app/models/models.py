@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 class XrpNetwork():
     def __init__(self,     
         json_rpc: str,
@@ -25,3 +27,13 @@ class XrpNetwork():
             "type": self.type,
             "domain": self.domain
         }
+
+class URIStageStructure(BaseModel):
+    date: int
+    state: int
+    max: int
+    id: str
+
+    class Config:
+        extra = 'forbid'
+    

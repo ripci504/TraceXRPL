@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request
-from app.backend.routes_funcs import generate_wallet, create_product_nft, create_product_temp, handle_products_form
-from app.backend.database import Wallet, ProductModel, Product, ProductStates
+from flask import Blueprint, render_template, request, abort, redirect
+from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_nftoken_data
+from app.models.database import Wallet, ProductModel, Product, ProductStates
 from app import app
 from werkzeug.utils import secure_filename
 import os
+import json
 import shortuuid
 
 
@@ -17,7 +18,7 @@ def allowed_file(filename):
 @app.before_first_request(generate_wallet) # func on server initiation
 @main.route('/')
 def index():
-    return render_template('index.html')
+    return redirect('/create_product')
 
 @main.route('/create_product', methods=['POST', 'GET'])
 def create_product():
@@ -31,7 +32,7 @@ def create_product():
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         org = request.form.get('orginization')
         name = request.form.get('product')
-        return create_product_temp(org=org, product=uuid, name=name)
+        return create_product_temp(org=org, product=uuid, name=name, filename=filename, default_state=0)
 
     products = ProductModel.query.all()
     return render_template('create_product.html', products=products)
@@ -48,8 +49,15 @@ def products(uuid):
 
 @main.route('/portfolio/<wallet>')
 def portfolio(wallet):
-    pass
+    return 'INPROGRESS'
 
 @main.route('/product/<nftokenid>')
-def check_product(product):
-    return render_template('product_jinja.html')
+def check_product(nftokenid):
+    try:
+        product, productmodel, productxrpl, productowner, producthistory, stage_dict, validatedhistory = get_nftoken_data(nftokenid)
+        return render_template('product_jinja.html', product=product, productmodel=productmodel, productxrpl=json.loads(productxrpl), productowner=productowner, producthistory=producthistory,\
+                                stage_dict=stage_dict, validatedhistory=json.loads(validatedhistory))
+    except Exception as e:
+        return str(e)
+        # Most likely gathering NFToken from ID failed, can not verify it exists
+        abort(404)

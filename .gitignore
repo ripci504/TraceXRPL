@@ -1,3 +1,7 @@
 
 *.png
 *.db
+*.pyc
+*.pyc
+app/requirements.txt
+*.jpg

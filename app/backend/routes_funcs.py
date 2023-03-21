@@ -1,8 +1,10 @@
-from app.backend.models import XrpNetwork
+from app.models.models import XrpNetwork
 from app import db, app
-from app.backend.database import Wallet, Product, ProductStates, ProductModel
-from flask import redirect
+from app.models.database import Wallet, Product, ProductStates, ProductModel
+from flask import redirect, request
 import time
+import requests
+import json
 
 ### XRPL MODULES:
 from xrpl.models.transactions.nftoken_mint import NFTokenMint, NFTokenMintFlag
@@ -35,8 +37,8 @@ def generate_wallet(*args):
             db.session.commit()
 
 
-def create_product_temp(org, product, name):
-    product = ProductModel(uuid=product, org=org, name=name)
+def create_product_temp(org, product, name, filename, default_state):
+    product = ProductModel(uuid=product, org=org, name=name, image=filename, default_state=default_state)
     db.session.add(product)
     db.session.commit()
     return 'success'
@@ -51,7 +53,7 @@ def handle_products_form(request, uuid):
         db.session.add(newstate)
         db.session.commit()
         return redirect('/products/' + uuid)
-    else:
+    elif request.form.get('type') == 'new_mint':
         product = ProductModel.query.filter_by(uuid=uuid).first()
         products_minted = Product.query.filter_by(product_uuid=uuid).all()
         # COUNT PRODUCTS MINTED TO GET MODEL NUMBER
@@ -60,21 +62,21 @@ def handle_products_form(request, uuid):
             x += 1
         # INITIATE WALLET
         database_wallet = Wallet.query.all()
-        client=JsonRpcClient(network['json_rpc'])
+        client=JsonRpcClient(network.to_dict()['json_rpc'])
         xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
         # BUILD DICT URI
         nftokenobject = {
             'org': product.org, # MAX 32
             'product': product.name, # MAX 20
             'model': x, # MAX 10
-            'creation': time.time() # MAX 12
+            'creation': int(time.time()) # MAX 12
         }
-        nftokenuri = str_to_hex(nftokenobject)
-        if len(nftokenuri > 256):
+        nftokenuri = str_to_hex(str(nftokenobject))
+        if len(nftokenuri) > 256:
             return 'object too big'
         # CREATE MINT REQUEST
         mint_tx = NFTokenMint(
-            account=xrplwallet,
+            account=xrplwallet.classic_address,
             nftoken_taxon=0,
             flags=NFTokenMintFlag.TF_TRANSFERABLE,
             uri=nftokenuri
@@ -84,54 +86,95 @@ def handle_products_form(request, uuid):
             mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
             mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
             mint_tx_result = mint_tx_signed.result
-            new_product = Product(product_uuid=uuid, product_name=product.name, nftokenid=get_nftoken_id(mint_tx_result['meta']), transhash=mint_tx_result['hash'], product_state=0)
+            new_product = Product(product_uuid=uuid, product_name=product.name, nftokenid=get_nftoken_id.get_nftoken_id(mint_tx_result['meta']), transhash=mint_tx_result['hash'], product_state=product.default_state)
             db.session.add(new_product)
             db.session.commit()
-        except:
-            pass
+        except Exception as e:
+            return str(e)
+        return redirect('/products/' + uuid)
+    elif request.form.get('type') == 'next_stage':
+        nftokenid = request.form.get('nftokenid')
+        product = ProductModel.query.filter_by(uuid=uuid).first()
+        product_minted = Product.query.filter_by(nftokenid=nftokenid).first()
+        states = ProductStates.query.filter_by(product_id=uuid).all()
+        x = 0
+        for _ in states:
+            x += 1
+        if product_minted.product_state < x:
+            product_minted.product_state += 1
+            db.session.commit()
+            return create_state_update(product_minted.product_state, x, nftokenid, uuid)
 
 
-def create_state_update(date, state, max, id):
+def create_state_update(state, max, id, uuid):
     # QUERY DB but there will only be one row
     # This func will take time, use celery 
     database_wallet = Wallet.query.all()
-    client=JsonRpcClient(network['json_rpc'])
+    client=JsonRpcClient(network.to_dict()['json_rpc'])
     xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
     nftokenobject = {
-        'date': date, # MAX 12
+        'date': int(time.time()), # MAX 12
         'state': state, # MAX 3
         'max': max, # MAX 3
         'id': id # MAX 64 (NFTOKENID OF PARENT)
     }
-    nftokenuri = str_to_hex(nftokenobject)
-    if len(nftokenuri > 256):
+    nftokenuri = str_to_hex(str(nftokenobject))
+    if len(nftokenuri) > 256:
         return 'object too big'
     mint_tx = NFTokenMint(
-        account=xrplwallet,
+        account=xrplwallet.classic_address,
         nftoken_taxon=0,
         flags=NFTokenMintFlag.TF_TRANSFERABLE,
         uri=nftokenuri
     )
+    # SEND MINT REQUEST
+    try:
+        mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
+        mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
+        mint_tx_result = mint_tx_signed.result
+    except Exception as e:
+        return str(e)
+    return redirect('/products/' + uuid)
 
+def get_nftoken_data(nftokenid):
+    product = Product.query.filter_by(nftokenid=nftokenid).first()
+    product_model = ProductModel.query.filter_by(uuid=product.product_uuid).first()
+    # Connect to altnet clio server to access special nft_info method
+    r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
+    product_xrpl = json.loads(r.text)['result']['uri'].replace("\'", "\"")
+    product_owner = json.loads(r.text)['result']['owner']
 
-
-
-#from xrpl.utils import hex_to_str, str_to_hex
-
-#dictionary = {
-#    'org': 'Louis Vuitton 12345678910123456', # MAX 32,
-#    'product': 'Hand Bag 1 2 3 4 5 6', # MAX 20
-#    'model': '1234567890', # MAX 10,
-#    'creation': '167927492700' # MAX 12
-#}
-
-#nftokenobject = {
-#    'date': '1234567890__', # MAX 12
-#    'state': '10', # MAX 3
-#    'max': '10', # MAX 3
-#    'id': '000100004819DB6461BF1BC2D18B511DE0A2799EE3FCC2E90000099B00000000' # MAX 64
-#}
-
-#dictionary = str(dictionary)
-#print(len(str_to_hex(dictionary)))
-#print(str_to_hex(dictionary))
+    ## CREATE PRODUCT STATES & LISTS
+    states = ProductStates.query.filter_by(product_id=product.product_uuid).all()
+    x = 0
+    product_stages_list = []
+    for _ in states:
+        product_stages_list.append(False)
+        x += 1
+    if x != 0:
+        for n in range(product.product_state):
+            product_stages_list[n] = True
+        per = 1 / x
+        percentage = 0
+        stage = 0
+        for y in product_stages_list:
+            if y == True:
+                percentage += per
+                stage += 1
+        stage_dict ={
+            'percentage': int(percentage * 100),
+            'stage': stage,
+            'max_stage': x
+            }
+        product_history = []
+    else:
+        stage_dict ={
+            'percentage': 100,
+            'stage': '0',
+            'max_stage': '0'
+        }
+        product_history = []
+    ## GET VALIDATED PRODUCT HISTORY FROM XRPL
+    r = requests.get(request.host_url + '/api/get_product_stages/' + nftokenid)
+    validated_history = r.text
+    return product, product_model, product_xrpl, product_owner, product_history, stage_dict, validated_history

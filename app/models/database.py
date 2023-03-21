@@ -29,6 +29,7 @@ class Product(Base):
     product_uuid = db.Column(db.Text)
     product_name = db.Column(db.Text)
     nftokenid = db.Column(db.Text)
+    # Transaction hash can be used to create sell offer for physical product owner
     transhash = db.Column(db.Text)
     product_state = db.Column(db.Integer)
 
@@ -46,11 +47,15 @@ class ProductModel(Base):
     uuid = db.Column(db.Text)
     name = db.Column(db.Text)
     org = db.Column(db.Text)
+    image = db.Column(db.Text)
+    default_state = db.Column(db.Text)
     
-    def __init__(self, uuid, name, org):
+    def __init__(self, uuid, name, org, image, default_state):
         self.uuid = uuid
         self.name = name
         self.org = org
+        self.image = image
+        self.default_state = default_state
     
 
 class ProductStates(Base):
@@ -59,7 +64,6 @@ class ProductStates(Base):
     product_id = db.Column(db.Integer)
     state_name = db.Column(db.Text)
     state_number = db.Column(db.Integer)
-
     
     def __init__(self, product_id, state_name, state_number):
         self.product_id = product_id
