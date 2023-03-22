@@ -23,7 +23,7 @@ def stages_from_nftokenid(nftokenid):
     for count, x in enumerate(states, 1):
         if count <= product.product_state:
             active = True
-            date, validatingNFT = get_date_from_nftoken(nftokenid, product_issuer)
+            date, validatingNFT = get_date_from_nftoken(nftokenid, product_issuer, count)
         else:
             active = False
             date = False
@@ -40,7 +40,7 @@ def stages_from_nftokenid(nftokenid):
     return stages_return
 
 # Helper func to search issuer for product stage related NFTs and retrieve date of creation.
-def get_date_from_nftoken(nftokenid, issuer):
+def get_date_from_nftoken(nftokenid, issuer, count):
     client=JsonRpcClient(network.to_dict()['json_rpc'])
     response = client.request(AccountNFTs(account=issuer))
     for nft in response.result['account_nfts']:
@@ -48,7 +48,7 @@ def get_date_from_nftoken(nftokenid, issuer):
             URI_dict = json.loads(hex_to_str(nft['URI']).replace("\'", "\""))
             URIStageStructure(**URI_dict)
             # After this, validation is success or it will continue
-            if URI_dict['id'] == nftokenid:
+            if URI_dict['id'] == nftokenid and URI_dict['state'] == count:
                 return URI_dict['date'], nft['NFTokenID']
         except:
             # Structure validation failed, continue to next NFT
