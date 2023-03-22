@@ -8,6 +8,6 @@ The ability for producers to create non-fungible digital assets that represent p
 
 A consumer purchases, or preorders a bag online, and with their receipt they are able to claim an NFT that represents this bag. As the company produces the bag, each stage of production is represented & minted as an NFT that is connected to the consumers bag/NFT.  Using their NFTokenID, the consumer can then view their product history and authenticity online. 
 
-![Authenticity Example](docs/images/authenticity_example.png)
+![Authenticity Example](./images/authenticity_example.png)
 
 Populated by data from the XRPL, Product Metadata and Product History are stored as NFTs and can **not** be changed. 
