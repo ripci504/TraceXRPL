@@ -1,4 +1,4 @@
-# XRPChain - proof of concept product authentication 
+# TraceXRPL - proof of concept product authentication 
 
 A proof of concept application that allows products to be linked to NFTs on the XRPL, immutably update and record production status, and verify authenticity of products.
 
