@@ -11,3 +11,4 @@ api = Blueprint('api', __name__, url_prefix='/api')
 @api.route('/get_product_stages/<nftokenid>')
 def get_product_stages(nftokenid):
     return stages_from_nftokenid(nftokenid)
+

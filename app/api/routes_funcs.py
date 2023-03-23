@@ -1,5 +1,6 @@
 from app.models.database import Wallet, ProductModel, Product, ProductStates
 from app.models.models import XrpNetwork, URIStageStructure
+from app.helpers.helper_funcs import shrink_nftokenid
 import requests
 import json
 
@@ -48,9 +49,9 @@ def get_date_from_nftoken(nftokenid, issuer, count):
             URI_dict = json.loads(hex_to_str(nft['URI']).replace("\'", "\""))
             URIStageStructure(**URI_dict)
             # After this, validation is success or it will continue
-            if URI_dict['id'] == nftokenid and URI_dict['state'] == count:
+            if shrink_nftokenid(URI_dict['id']) == shrink_nftokenid(nftokenid) and URI_dict['state'] == count:
                 return URI_dict['date'], nft['NFTokenID']
         except:
             # Structure validation failed, continue to next NFT
             continue
-    return response.result
+        

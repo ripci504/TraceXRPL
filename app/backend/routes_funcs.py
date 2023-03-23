@@ -1,10 +1,12 @@
 from app.models.models import XrpNetwork
 from app import db, app
 from app.models.database import Wallet, Product, ProductStates, ProductModel
+from app.helpers.helper_funcs import shrink_nftokenid
 from flask import redirect, request
 import time
 import requests
 import json
+
 
 ### XRPL MODULES:
 from xrpl.models.transactions.nftoken_mint import NFTokenMint, NFTokenMintFlag
@@ -37,11 +39,11 @@ def generate_wallet(*args):
             db.session.commit()
 
 
-def create_product_temp(org, product, name, filename, default_state):
-    product = ProductModel(uuid=product, org=org, name=name, image=filename, default_state=default_state)
+def create_product_temp(org, product_uuid, name, filename, default_state):
+    product = ProductModel(uuid=product_uuid, org=org, name=name, image=filename, default_state=default_state)
     db.session.add(product)
     db.session.commit()
-    return 'success'
+    return redirect('/products/' + product_uuid)
 
 def handle_products_form(request, uuid):
     if request.form.get('type') == 'new_stage':
@@ -66,7 +68,7 @@ def handle_products_form(request, uuid):
         xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
         # BUILD DICT URI
         nftokenobject = {
-            'org': product.org, # MAX 32
+            'org': product.org, # MAX 30
             'product': product.name, # MAX 20
             'model': x, # MAX 10
             'creation': int(time.time()) # MAX 12
@@ -116,7 +118,7 @@ def create_state_update(state, max, id, uuid):
         'date': int(time.time()), # MAX 12
         'state': state, # MAX 3
         'max': max, # MAX 3
-        'id': id # MAX 64 (NFTOKENID OF PARENT)
+        'id': shrink_nftokenid(id) # MAX 16 (SHRUNK NFTOKENID)
     }
     nftokenuri = str_to_hex(str(nftokenobject))
     if len(nftokenuri) > 256:

@@ -32,7 +32,7 @@ def create_product():
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         org = request.form.get('orginization')
         name = request.form.get('product')
-        return create_product_temp(org=org, product=uuid, name=name, filename=filename, default_state=0)
+        return create_product_temp(org=org, product_uuid=uuid, name=name, filename=filename, default_state=0)
 
     products = ProductModel.query.all()
     return render_template('create_product.html', products=products)
