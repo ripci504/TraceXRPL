@@ -10,7 +10,7 @@
   </head>
   
   <body>
-
+    <div id="loading" class="loading" style="display: none;"></div>
     <div class="container-fluid p-5">
         <div class="row">
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
@@ -63,17 +63,39 @@
                             <strong>{{i.state_number}}: </strong>{{i.state_name}}
                         </p>
                     {% endfor %}
-                </div>
                 
-                <form class="row g-3" method="post">
-                    <input type="hidden" name="type" value="new_stage">
-                    <div class="col">
-                      <input type="text"  class="form-control m-1" name="new_stage" placeholder="New Stage.. (Order Placed, Production, etc.)" required>
-                    </div>
-                    <div class="col">
-                      <button type="submit" class="btn btn-primary m-1">Create New Stage</button>
-                    </div>
-                 </form>
+                  <form class="row g-3" method="post">
+                      <input type="hidden" name="type" value="new_stage">
+                      <div class="col">
+                        <input type="text"  class="form-control m-1" name="new_stage" placeholder="New Stage.. (Order Placed, Production, etc.)" required>
+                      </div>
+                      <div class="col">
+                        <button type="submit" class="btn btn-primary m-1">Create New Stage</button>
+                      </div>
+                  </form>
+                </div>
+                <hr>
+                <div>
+                  <h2>Metadata Fields</h2>
+                  <p>These are names of values that can be minted for your product, such as the color or other values. Max 5, max length 10 characters.</p>
+                  <p>Shorten as much as possibe. Example: 'Watch Face' to 'Face'</p>
+                  <h5>{{current_product.name}} Metadata Fields:</h5>
+                  {% for i in metadata %}
+                      <p>
+                          <strong>{{ loop.index }}: </strong>{{i.meta_name}}
+                      </p>
+                  {% endfor %}
+              
+                  <form class="row g-3" method="post">
+                      <input type="hidden" name="type" value="new_meta">
+                      <div class="col">
+                        <input type="text" class="form-control m-1" name="new_meta" placeholder="New Data Field.. (Face, Color, Model, Size, etc.)" required>
+                      </div>
+                      <div class="col">
+                        <button type="submit" class="btn btn-primary m-1">Create New Field</button>
+                      </div>
+                  </form>
+                </div>
 
                 <hr>
                 <h2>Minted Products <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Mint new {{current_product.name}}</button></h2>
@@ -153,6 +175,15 @@
 
                     <button type="submit" class="btn btn-primary">Next Stage</button>
                   </form>
+                  <br>
+
+                  <h5>Product Metadata</h5>
+                  <div id="product_metadata_container">
+                    <form id="product_metadata" method="post">
+
+
+                    </form>
+                  </div>
 
           </div>
           <div class="modal-footer">

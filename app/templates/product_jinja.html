@@ -53,7 +53,7 @@
             
             <div class="text-start">
               <hr>
-              <h5>Product Metadata</h5>
+              <h5>Product Data</h5>
               <p><strong>Orginization:</strong> {{ productxrpl.org }}</p>
               <p><strong>Product:</strong> {{ productxrpl.product }}</p>
               <p><strong>Model:</strong> {{ productxrpl.model }}</p>
@@ -73,7 +73,16 @@
                   <p><strong>{{i.stage_name}}:</strong> <s>Not Active</s> </p>
                 {% endif %}
               {% endfor %}
-
+              <hr>
+              <h5>Product Metadata</h5>
+                {% if validatedmetadata %}
+                  {% for i in validatedmetadata.uri %}
+                    <p><strong>{{i}}: </strong> {{validatedmetadata.uri[i]}}</p>
+                  {% endfor %}
+                  <a href="https://testnet.xrpl.org/nft/{{validatedmetadata.nftokenid}}" target="_blank">Validated</a>
+                {% else %}
+                  <p><strong>There is no validated metadata.</strong></p>
+                {% endif %}
             </div>
           </div>
         </div>

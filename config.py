@@ -2,6 +2,8 @@ DEBUG = True
 
 # Define the application directory
 import os
+import uuid
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  
 
 # Define the database - we are working with
@@ -22,9 +24,9 @@ CSRF_ENABLED     = True
 
 # Use a secure, unique and absolutely secret key for
 # signing the data. 
-CSRF_SESSION_KEY = "secret"
+CSRF_SESSION_KEY = uuid.uuid4().hex
 
 # Secret key for signing cookies
-SECRET_KEY = "secret1"
+SECRET_KEY = uuid.uuid4().hex
 
 static_folder="/static" 

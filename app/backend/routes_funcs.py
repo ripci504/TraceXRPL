@@ -1,7 +1,7 @@
 from app.models.models import XrpNetwork
 from app import db, app
-from app.models.database import Wallet, Product, ProductStates, ProductModel
-from app.helpers.helper_funcs import shrink_nftokenid
+from app.models.database import Wallet, Product, ProductStates, ProductModel, ProductMetadata
+from app.helpers.helper_funcs import shrink_nftokenid, shrink_json
 from flask import redirect, request
 import time
 import requests
@@ -55,6 +55,17 @@ def handle_products_form(request, uuid):
         db.session.add(newstate)
         db.session.commit()
         return redirect('/products/' + uuid)
+    if request.form.get('type') == 'new_meta':
+        metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
+        x = 0
+        for _ in metadata:
+            x += 1
+        if x >= 5:
+            return redirect('/products/' + uuid)
+        newfield = ProductMetadata(product_id=uuid, meta_name=request.form.get('new_meta'))
+        db.session.add(newfield)
+        db.session.commit()
+        return redirect('/products/' + uuid)
     elif request.form.get('type') == 'new_mint':
         product = ProductModel.query.filter_by(uuid=uuid).first()
         products_minted = Product.query.filter_by(product_uuid=uuid).all()
@@ -73,15 +84,12 @@ def handle_products_form(request, uuid):
             'model': x, # MAX 10
             'creation': int(time.time()) # MAX 12
         }
-        nftokenuri = str_to_hex(str(nftokenobject))
-        if len(nftokenuri) > 256:
-            return 'object too big'
         # CREATE MINT REQUEST
         mint_tx = NFTokenMint(
             account=xrplwallet.classic_address,
             nftoken_taxon=0,
             flags=NFTokenMintFlag.TF_TRANSFERABLE,
-            uri=nftokenuri
+            uri=shrink_json(nftokenobject)
         )
         # SEND MINT REQUEST
         try:
@@ -106,6 +114,36 @@ def handle_products_form(request, uuid):
             product_minted.product_state += 1
             db.session.commit()
             return create_state_update(product_minted.product_state, x, nftokenid, uuid)
+    elif request.form.get('type') == 'create_meta':
+        return create_meta_nft(request, uuid)
+
+def create_meta_nft(request, uuid):
+    nftokenobject = {}
+    metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
+    for x in metadata:
+        nftokenobject[x.meta_name] = request.form.get(x.meta_name)
+    nftokenobject['id']='mta' + shrink_nftokenid(request.form.get('nftokenid'))
+    database_wallet = Wallet.query.all()
+    client=JsonRpcClient(network.to_dict()['json_rpc'])
+    xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
+    
+    mint_tx = NFTokenMint(
+    account=xrplwallet.classic_address,
+    nftoken_taxon=0,
+    flags=NFTokenMintFlag.TF_TRANSFERABLE,
+    uri=shrink_json(nftokenobject)
+    )
+
+    # SEND MINT REQUEST
+    try:
+        mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
+        mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
+        mint_tx_result = mint_tx_signed.result
+    except Exception as e:
+        return str(e)
+    return redirect('/products/' + uuid)
+        
+
 
 
 def create_state_update(state, max, id, uuid):
@@ -120,14 +158,11 @@ def create_state_update(state, max, id, uuid):
         'max': max, # MAX 3
         'id': shrink_nftokenid(id) # MAX 16 (SHRUNK NFTOKENID)
     }
-    nftokenuri = str_to_hex(str(nftokenobject))
-    if len(nftokenuri) > 256:
-        return 'object too big'
     mint_tx = NFTokenMint(
         account=xrplwallet.classic_address,
         nftoken_taxon=0,
         flags=NFTokenMintFlag.TF_TRANSFERABLE,
-        uri=nftokenuri
+        uri=shrink_json(nftokenobject)
     )
     # SEND MINT REQUEST
     try:
@@ -178,5 +213,11 @@ def get_nftoken_data(nftokenid):
         product_history = []
     ## GET VALIDATED PRODUCT HISTORY FROM XRPL
     r = requests.get(request.host_url + '/api/get_product_stages/' + nftokenid)
-    validated_history = r.text
-    return product, product_model, product_xrpl, product_owner, product_history, stage_dict, validated_history
+    validated_history = json.loads(r.text)
+    ## GET VALIDATED PRODUCT METADATA FROM XRPL
+    res = requests.get(request.host_url + '/api/get_metafield_dashboard/' + nftokenid)
+    validated_metadata = json.loads(res.text)
+    if validated_metadata['type'] != 'created':
+        validated_metadata = False
+        
+    return product, product_model, product_xrpl, product_owner, product_history, stage_dict, validated_history, validated_metadata

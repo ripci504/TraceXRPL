@@ -1,6 +1,6 @@
-from app.models.database import Wallet, ProductModel, Product, ProductStates
+from app.models.database import Wallet, ProductModel, Product, ProductStates, ProductMetadata
 from app.models.models import XrpNetwork, URIStageStructure
-from app.helpers.helper_funcs import shrink_nftokenid
+from app.helpers.helper_funcs import shrink_nftokenid, expand_nftokenid
 import requests
 import json
 
@@ -15,6 +15,7 @@ test_net = XrpNetwork({'domain': 's.altnet.rippletest.net', 'json_rpc': 'https:/
 # SET NETWORK
 network = test_net
 
+# STAGES
 def stages_from_nftokenid(nftokenid):
     stages_return = []
     product = Product.query.filter_by(nftokenid=nftokenid).first()
@@ -54,4 +55,33 @@ def get_date_from_nftoken(nftokenid, issuer, count):
         except:
             # Structure validation failed, continue to next NFT
             continue
-        
+
+# METADATA
+def render_metafields_dashboard(nftokenid):
+    metadata_dict = {}
+    product = Product.query.filter_by(nftokenid=nftokenid).first()
+    metadata = ProductMetadata.query.filter_by(product_id=product.product_uuid).all()
+    r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
+    product_issuer = json.loads(r.text)['result']['issuer']
+    client=JsonRpcClient(network.to_dict()['json_rpc'])
+    response = client.request(AccountNFTs(account=product_issuer))
+    found_nftokenid = False
+    for nft in response.result['account_nfts']:
+        try:
+            URI_dict = json.loads(hex_to_str(nft['URI']).replace("\'", "\""))
+            if shrink_nftokenid(URI_dict['id']) == shrink_nftokenid(nftokenid) and URI_dict['id'][:3] == 'mta':
+                found_nftokenid = nft['NFTokenID']
+                found_uri = URI_dict
+        except:
+            continue
+    if found_nftokenid:
+        found_uri.pop('id')
+        metadata_dict['type'] = 'created'
+        metadata_dict['nftokenid'] = found_nftokenid
+        metadata_dict['uri'] = found_uri
+    else:
+        metadata_dict['type']= 'not_created'
+        for i in metadata:
+            metadata_dict[i.id]=i.meta_name
+    return json.dumps(metadata_dict)
+    

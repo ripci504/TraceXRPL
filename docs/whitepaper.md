@@ -30,9 +30,11 @@ Other luxury products, such as watches, have communities of enthusiasts and prof
 
 1. Further develop on-ledger storage to store more metadata about a product, such as a watches face, band, etc.
 2. Finish creating API (most important endpoint will return JSON of all on-chain/off-chain data about a product)
-3. Allow other wallets to claim product NFT
-4. Create business sign-in & create a real UI
-5. Shopify App and WordPress Plugin
+3. Code refactoring
+4. Create [recommended TXT](https://xrpl.org/nftoken.html#txt-record-format) / .well-known paths
+5. Allow other wallets to claim product NFT
+6. Create business sign-in & create a real UI
+7. Shopify App and WordPress Plugin
 
 ## Technical Design
 

@@ -61,7 +61,7 @@ class ProductModel(Base):
 class ProductStates(Base):
     __tablename__ = 'product_states'
 
-    product_id = db.Column(db.Integer)
+    product_id = db.Column(db.Text)
     state_name = db.Column(db.Text)
     state_number = db.Column(db.Integer)
     
@@ -69,4 +69,14 @@ class ProductStates(Base):
         self.product_id = product_id
         self.state_name = state_name
         self.state_number = state_number
+
+class ProductMetadata(Base):
+    __tablename__ = 'product_metadata'
+
+    product_id = db.Column(db.Text)
+    meta_name = db.Column(db.Text)
+    
+    def __init__(self, product_id, meta_name):
+        self.product_id = product_id
+        self.meta_name = meta_name
     

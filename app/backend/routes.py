@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, abort, redirect
 from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_nftoken_data
-from app.models.database import Wallet, ProductModel, Product, ProductStates
+from app.models.database import Wallet, ProductModel, Product, ProductStates, ProductMetadata
 from app import app
 from werkzeug.utils import secure_filename
 import os
@@ -45,7 +45,8 @@ def products(uuid):
     minted_products = Product.query.filter_by(product_uuid=uuid).all()
     current_product = ProductModel.query.filter_by(uuid=uuid).first()
     states = ProductStates.query.filter_by(product_id=uuid).all()
-    return render_template('view_product_dashboard.html', products=products, uuid=uuid, current_product=current_product, states=states, minted_products=minted_products)
+    metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
+    return render_template('view_product_dashboard.html', products=products, uuid=uuid, current_product=current_product, states=states, metadata=metadata, minted_products=minted_products)
 
 @main.route('/portfolio/<wallet>')
 def portfolio(wallet):
@@ -54,9 +55,10 @@ def portfolio(wallet):
 @main.route('/product/<nftokenid>')
 def check_product(nftokenid):
     try:
-        product, productmodel, productxrpl, productowner, producthistory, stage_dict, validatedhistory = get_nftoken_data(nftokenid)
+        # TEMPORARY DATA GATHERING FUNC
+        product, productmodel, productxrpl, productowner, producthistory, stage_dict, validatedhistory, validatedmetadata = get_nftoken_data(nftokenid)
         return render_template('product_jinja.html', product=product, productmodel=productmodel, productxrpl=json.loads(productxrpl), productowner=productowner, producthistory=producthistory,\
-                                stage_dict=stage_dict, validatedhistory=json.loads(validatedhistory))
+                                stage_dict=stage_dict, validatedhistory=validatedhistory, validatedmetadata=validatedmetadata)
     except Exception as e:
         return str(e)
         # Most likely gathering NFToken from ID failed, can not verify it exists
