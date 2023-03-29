@@ -30,7 +30,7 @@ class XrpNetwork():
 
 class URIStageStructure(BaseModel):
     date: int
-    state: int
+    stage: int
     max: int
     id: str
 

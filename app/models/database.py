@@ -31,15 +31,15 @@ class Product(Base):
     nftokenid = db.Column(db.Text)
     # Transaction hash can be used to create sell offer for physical product owner
     transhash = db.Column(db.Text)
-    product_state = db.Column(db.Integer)
+    product_stage = db.Column(db.Integer)
 
     
-    def __init__(self, product_uuid, product_name, nftokenid, transhash, product_state):
+    def __init__(self, product_uuid, product_name, nftokenid, transhash, product_stage):
         self.product_uuid = product_uuid
         self.product_name = product_name
         self.nftokenid = nftokenid
         self.transhash = transhash
-        self.product_state = product_state
+        self.product_stage = product_stage
 
 class ProductModel(Base):
     __tablename__ = 'product_model'
@@ -48,27 +48,27 @@ class ProductModel(Base):
     name = db.Column(db.Text)
     org = db.Column(db.Text)
     image = db.Column(db.Text)
-    default_state = db.Column(db.Text)
+    default_stage = db.Column(db.Text)
     
-    def __init__(self, uuid, name, org, image, default_state):
+    def __init__(self, uuid, name, org, image, default_stage):
         self.uuid = uuid
         self.name = name
         self.org = org
         self.image = image
-        self.default_state = default_state
+        self.default_stage = default_stage
     
 
-class ProductStates(Base):
-    __tablename__ = 'product_states'
+class ProductStages(Base):
+    __tablename__ = 'product_stages'
 
     product_id = db.Column(db.Text)
-    state_name = db.Column(db.Text)
-    state_number = db.Column(db.Integer)
+    stage_name = db.Column(db.Text)
+    stage_number = db.Column(db.Integer)
     
-    def __init__(self, product_id, state_name, state_number):
+    def __init__(self, product_id, stage_name, stage_number):
         self.product_id = product_id
-        self.state_name = state_name
-        self.state_number = state_number
+        self.stage_name = stage_name
+        self.stage_number = stage_number
 
 class ProductMetadata(Base):
     __tablename__ = 'product_metadata'

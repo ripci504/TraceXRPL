@@ -31,10 +31,11 @@ Other luxury products, such as watches, have communities of enthusiasts and prof
 1. Further develop on-ledger storage to store more metadata about a product, such as a watches face, band, etc.
 2. Finish creating API (most important endpoint will return JSON of all on-chain/off-chain data about a product)
 3. Code refactoring
-4. Create [recommended TXT](https://xrpl.org/nftoken.html#txt-record-format) / .well-known paths
-5. Allow other wallets to claim product NFT
-6. Create business sign-in & create a real UI
-7. Shopify App and WordPress Plugin
+4. Conversion to celery for task management
+5. Create [recommended TXT](https://xrpl.org/nftoken.html#txt-record-format) / .well-known paths
+6. Allow other wallets to claim product NFT
+7. Create business sign-in & create a real UI
+8. Shopify App and WordPress Plugin
 
 ## Technical Design
 
@@ -67,10 +68,10 @@ When a Product is assigned a certain product stage, a NFT is minted representing
 ```
 {
 'date': 1679606122, # Epoch creation date MAX length 12
-'state': 1, # Product Stage number MAX length 3
+'stage': 1, # Product Stage number MAX length 3
 'max': 4, # Total number of Product Stages for product MAX length 3
 'id': 0000099B00000000 # Last 16 of Product NFTokenID
 }
 ```
 
-Last 16 digits of NFTOKENID are the unique identifier and removes unnecessary 'identification' data, because all our minted NFTs have the same flags, transer fee, and issuer. The Product NFT can be owned by external wallets, but the product stage NFTs will always stay in the issuers wallet.
+Last 16 digits of NFTOKENID are the unique identifier and removes unnecessary 'identification' data, because all our minted NFTs have the same flags, transfer fee and issuer. The Product NFT can be owned by external wallets, but the product stage NFTs will always stay in the issuers wallet.

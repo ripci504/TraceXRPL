@@ -1,6 +1,6 @@
 from app.models.models import XrpNetwork
 from app import db, app
-from app.models.database import Wallet, Product, ProductStates, ProductModel, ProductMetadata
+from app.models.database import Wallet, Product, ProductStages, ProductModel, ProductMetadata
 from app.helpers.helper_funcs import shrink_nftokenid, shrink_json
 from flask import redirect, request
 import time
@@ -39,20 +39,20 @@ def generate_wallet(*args):
             db.session.commit()
 
 
-def create_product_temp(org, product_uuid, name, filename, default_state):
-    product = ProductModel(uuid=product_uuid, org=org, name=name, image=filename, default_state=default_state)
+def create_product_temp(org, product_uuid, name, filename, default_stage):
+    product = ProductModel(uuid=product_uuid, org=org, name=name, image=filename, default_stage=default_stage)
     db.session.add(product)
     db.session.commit()
     return redirect('/products/' + product_uuid)
 
 def handle_products_form(request, uuid):
     if request.form.get('type') == 'new_stage':
-        states = ProductStates.query.filter_by(product_id=uuid).all()
+        stages = ProductStages.query.filter_by(product_id=uuid).all()
         x = 0
-        for _ in states:
+        for _ in stages:
             x += 1
-        newstate = ProductStates(product_id=uuid, state_name=request.form.get('new_stage'), state_number=str(x+1))
-        db.session.add(newstate)
+        newstage = ProductStages(product_id=uuid, stage_name=request.form.get('new_stage'), stage_number=str(x+1))
+        db.session.add(newstage)
         db.session.commit()
         return redirect('/products/' + uuid)
     if request.form.get('type') == 'new_meta':
@@ -96,7 +96,7 @@ def handle_products_form(request, uuid):
             mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
             mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
             mint_tx_result = mint_tx_signed.result
-            new_product = Product(product_uuid=uuid, product_name=product.name, nftokenid=get_nftoken_id.get_nftoken_id(mint_tx_result['meta']), transhash=mint_tx_result['hash'], product_state=product.default_state)
+            new_product = Product(product_uuid=uuid, product_name=product.name, nftokenid=get_nftoken_id.get_nftoken_id(mint_tx_result['meta']), transhash=mint_tx_result['hash'], product_stage=product.default_stage)
             db.session.add(new_product)
             db.session.commit()
         except Exception as e:
@@ -106,14 +106,14 @@ def handle_products_form(request, uuid):
         nftokenid = request.form.get('nftokenid')
         product = ProductModel.query.filter_by(uuid=uuid).first()
         product_minted = Product.query.filter_by(nftokenid=nftokenid).first()
-        states = ProductStates.query.filter_by(product_id=uuid).all()
+        stages = ProductStages.query.filter_by(product_id=uuid).all()
         x = 0
-        for _ in states:
+        for _ in stages:
             x += 1
-        if product_minted.product_state < x:
-            product_minted.product_state += 1
+        if product_minted.product_stage < x:
+            product_minted.product_stage += 1
             db.session.commit()
-            return create_state_update(product_minted.product_state, x, nftokenid, uuid)
+            return create_stage_update(product_minted.product_stage, x, nftokenid, uuid)
     elif request.form.get('type') == 'create_meta':
         return create_meta_nft(request, uuid)
 
@@ -146,7 +146,7 @@ def create_meta_nft(request, uuid):
 
 
 
-def create_state_update(state, max, id, uuid):
+def create_stage_update(stage, max, id, uuid):
     # QUERY DB but there will only be one row
     # This func will take time, use celery 
     database_wallet = Wallet.query.all()
@@ -154,7 +154,7 @@ def create_state_update(state, max, id, uuid):
     xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
     nftokenobject = {
         'date': int(time.time()), # MAX 12
-        'state': state, # MAX 3
+        'stage': stage, # MAX 3
         'max': max, # MAX 3
         'id': shrink_nftokenid(id) # MAX 16 (SHRUNK NFTOKENID)
     }
@@ -181,15 +181,13 @@ def get_nftoken_data(nftokenid):
     product_xrpl = json.loads(r.text)['result']['uri'].replace("\'", "\"")
     product_owner = json.loads(r.text)['result']['owner']
 
-    ## CREATE PRODUCT STATES & LISTS
-    states = ProductStates.query.filter_by(product_id=product.product_uuid).all()
-    x = 0
+    ## CREATE PRODUCT STAGES & LISTS
+    stages = ProductStages.query.filter_by(product_id=product.product_uuid).all()
     product_stages_list = []
-    for _ in states:
+    for x, _ in enumerate(stages, 1):
         product_stages_list.append(False)
-        x += 1
     if x != 0:
-        for n in range(product.product_state):
+        for n in range(product.product_stage):
             product_stages_list[n] = True
         per = 1 / x
         percentage = 0

@@ -58,9 +58,9 @@
                 </div>
                 <div>
                     <h5>{{current_product.name}} Stages:</h5>
-                    {% for i in states %}
+                    {% for i in stages %}
                         <p>
-                            <strong>{{i.state_number}}: </strong>{{i.state_name}}
+                            <strong>{{i.stage_number}}: </strong>{{i.stage_name}}
                         </p>
                     {% endfor %}
                 
@@ -104,7 +104,7 @@
                     <thead>
                         <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Product State</th>
+                        <th scope="col">Product Stage</th>
                         <th scope="col">NFTokenID</th>
                         <th scope="col">Transaction Hash</th>
                         <th scope="col">View</th>
@@ -114,7 +114,7 @@
                         {% for product in minted_products %}
                             <tr style="cursor: pointer;" data-transhash="{{product.transhash}}" data-nftokenid="{{product.nftokenid}}" data-date="{{product.date_created}}"> 
                                   <td class="modalActivate" data-attr="hello">{{ loop.index }}</td>
-                                  <td class="modalActivate" data-attr="hello">{{product.product_state}}</td>
+                                  <td class="modalActivate" data-attr="hello">{{product.product_stage}}</td>
                                   <td class="modalActivate" data-attr="hello" id="{{product.nftokenid}}_row">{{product.nftokenid|truncate(15, False, '...', 0)}}</td>
                                   <td class="modalActivate" data-attr="hello" id="{{product.nftokenid}}_trans">{{product.transhash|truncate(15, False, '...', 0)}}</td>
                                 <td><a href="/product/{{product.nftokenid}}" target="_blank">View</a></td>

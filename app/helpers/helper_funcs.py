@@ -1,4 +1,5 @@
 import json
+import requests
 from xrpl.utils import str_to_hex
 
 # A NFTOKENID is usually 64 characters/256 bits long
@@ -28,4 +29,3 @@ def shrink_json(nftokenobject):
         return 'object too big'
     else:
         return nftokenuri
-    

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, abort, redirect
 from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_nftoken_data
-from app.models.database import Wallet, ProductModel, Product, ProductStates, ProductMetadata
+from app.models.database import Wallet, ProductModel, Product, ProductStages, ProductMetadata
 from app import app
 from werkzeug.utils import secure_filename
 import os
@@ -32,7 +32,7 @@ def create_product():
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         org = request.form.get('orginization')
         name = request.form.get('product')
-        return create_product_temp(org=org, product_uuid=uuid, name=name, filename=filename, default_state=0)
+        return create_product_temp(org=org, product_uuid=uuid, name=name, filename=filename, default_stage=0)
 
     products = ProductModel.query.all()
     return render_template('create_product.html', products=products)
@@ -44,9 +44,9 @@ def products(uuid):
     products = ProductModel.query.all()
     minted_products = Product.query.filter_by(product_uuid=uuid).all()
     current_product = ProductModel.query.filter_by(uuid=uuid).first()
-    states = ProductStates.query.filter_by(product_id=uuid).all()
+    stages = ProductStages.query.filter_by(product_id=uuid).all()
     metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
-    return render_template('view_product_dashboard.html', products=products, uuid=uuid, current_product=current_product, states=states, metadata=metadata, minted_products=minted_products)
+    return render_template('view_product_dashboard.html', products=products, uuid=uuid, current_product=current_product, stages=stages, metadata=metadata, minted_products=minted_products)
 
 @main.route('/portfolio/<wallet>')
 def portfolio(wallet):

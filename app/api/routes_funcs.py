@@ -1,4 +1,4 @@
-from app.models.database import Wallet, ProductModel, Product, ProductStates, ProductMetadata
+from app.models.database import Wallet, ProductModel, Product, ProductStages, ProductMetadata
 from app.models.models import XrpNetwork, URIStageStructure
 from app.helpers.helper_funcs import shrink_nftokenid, expand_nftokenid
 import requests
@@ -19,11 +19,11 @@ network = test_net
 def stages_from_nftokenid(nftokenid):
     stages_return = []
     product = Product.query.filter_by(nftokenid=nftokenid).first()
-    states = ProductStates.query.filter_by(product_id=product.product_uuid).all()
+    stages = ProductStages.query.filter_by(product_id=product.product_uuid).all()
     r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
     product_issuer = json.loads(r.text)['result']['issuer']
-    for count, x in enumerate(states, 1):
-        if count <= product.product_state:
+    for count, x in enumerate(stages, 1):
+        if count <= product.product_stage:
             active = True
             date, validatingNFT = get_date_from_nftoken(nftokenid, product_issuer, count)
         else:
@@ -31,8 +31,8 @@ def stages_from_nftokenid(nftokenid):
             date = False
             validatingNFT = False
         stages_dict = {
-            'stage_name': x.state_name,
-            'stage_number': x.state_number,
+            'stage_name': x.stage_name,
+            'stage_number': x.stage_number,
             'active': active,
             'date': date,
             'validating_id': validatingNFT
@@ -50,7 +50,7 @@ def get_date_from_nftoken(nftokenid, issuer, count):
             URI_dict = json.loads(hex_to_str(nft['URI']).replace("\'", "\""))
             URIStageStructure(**URI_dict)
             # After this, validation is success or it will continue
-            if shrink_nftokenid(URI_dict['id']) == shrink_nftokenid(nftokenid) and URI_dict['state'] == count:
+            if shrink_nftokenid(URI_dict['id']) == shrink_nftokenid(nftokenid) and URI_dict['stage'] == count:
                 return URI_dict['date'], nft['NFTokenID']
         except:
             # Structure validation failed, continue to next NFT
@@ -85,3 +85,26 @@ def render_metafields_dashboard(nftokenid):
             metadata_dict[i.id]=i.meta_name
     return json.dumps(metadata_dict)
     
+def gather_product_information(nftokenid):
+    # Variables to build master dict
+    product = Product.query.filter_by(nftokenid=nftokenid).first()
+    r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
+    product_stages = stages_from_nftokenid(nftokenid)
+    product_data = json.loads(r.text)['result']['uri']
+    validated_metadata = json.loads(render_metafields_dashboard(nftokenid))
+    if validated_metadata['type'] != 'created':
+        validated_metadata = False
+    else:
+        validated_metadata.pop('type')
+        validated_metadata['validating_id'] = validated_metadata.pop('nftokenid')
+
+    master = {
+        'nftokenid': nftokenid,
+        'transaction_hash': product.transhash,
+        'data': {
+            'product_stages': product_stages,
+            'product_data': product_data,
+            'product_metadata': validated_metadata
+        }
+    }
+    return master
