@@ -38,7 +38,6 @@ def generate_wallet(*args):
             db.session.add(wallet)
             db.session.commit()
 
-
 def create_product_temp(org, product_uuid, name, filename, default_stage):
     product = ProductModel(uuid=product_uuid, org=org, name=name, image=filename, default_stage=default_stage)
     db.session.add(product)
@@ -173,15 +172,8 @@ def create_stage_update(stage, max, id, uuid):
         return str(e)
     return redirect('/products/' + uuid)
 
-def get_nftoken_data(nftokenid):
+def get_stage_dict(nftokenid):
     product = Product.query.filter_by(nftokenid=nftokenid).first()
-    product_model = ProductModel.query.filter_by(uuid=product.product_uuid).first()
-    # Connect to altnet clio server to access special nft_info method
-    r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
-    product_xrpl = json.loads(r.text)['result']['uri'].replace("\'", "\"")
-    product_owner = json.loads(r.text)['result']['owner']
-
-    ## CREATE PRODUCT STAGES & LISTS
     stages = ProductStages.query.filter_by(product_id=product.product_uuid).all()
     product_stages_list = []
     for x, _ in enumerate(stages, 1):
@@ -200,22 +192,11 @@ def get_nftoken_data(nftokenid):
             'percentage': int(percentage * 100),
             'stage': stage,
             'max_stage': x
-            }
-        product_history = []
+        }
     else:
         stage_dict ={
             'percentage': 100,
             'stage': '0',
             'max_stage': '0'
         }
-        product_history = []
-    ## GET VALIDATED PRODUCT HISTORY FROM XRPL
-    r = requests.get(request.host_url + '/api/get_product_stages/' + nftokenid)
-    validated_history = json.loads(r.text)
-    ## GET VALIDATED PRODUCT METADATA FROM XRPL
-    res = requests.get(request.host_url + '/api/get_metafield_dashboard/' + nftokenid)
-    validated_metadata = json.loads(res.text)
-    if validated_metadata['type'] != 'created':
-        validated_metadata = False
-        
-    return product, product_model, product_xrpl, product_owner, product_history, stage_dict, validated_history, validated_metadata
+    return stage_dict

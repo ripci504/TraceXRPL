@@ -8,8 +8,7 @@ import shortuuid
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
-# TO DO: COMBINE BOTH OF THESE ROUTES/FUNCTIONS
-
+# DASHBOARD FUNCTIONS
 @api.route('/get_product_stages/<nftokenid>')
 def get_product_stages(nftokenid):
     return stages_from_nftokenid(nftokenid)
@@ -18,6 +17,7 @@ def get_product_stages(nftokenid):
 def get_metafield_dashboard(nftokenid):
     return render_metafields_dashboard(nftokenid)
 
+# MAIN APIs
 @api.route('/get_product_information/<nftokenid>')
 def get_product_information(nftokenid):
     # Return ALL on-chain/off-chain information about a product

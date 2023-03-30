@@ -88,23 +88,27 @@ def render_metafields_dashboard(nftokenid):
 def gather_product_information(nftokenid):
     # Variables to build master dict
     product = Product.query.filter_by(nftokenid=nftokenid).first()
+    product_model = ProductModel.query.filter_by(uuid=product.product_uuid).first()
     r = requests.post('http://clio.altnet.rippletest.net:51233/', data=json.dumps({"method": "nft_info", "params": [{"nft_id": nftokenid}]}))
     product_stages = stages_from_nftokenid(nftokenid)
     product_data = json.loads(r.text)['result']['uri']
+    product_owner = json.loads(r.text)['result']['owner']
     validated_metadata = json.loads(render_metafields_dashboard(nftokenid))
     if validated_metadata['type'] != 'created':
         validated_metadata = False
     else:
         validated_metadata.pop('type')
         validated_metadata['validating_id'] = validated_metadata.pop('nftokenid')
-
+    
     master = {
         'nftokenid': nftokenid,
         'transaction_hash': product.transhash,
+        'owner': product_owner,
         'data': {
             'product_stages': product_stages,
-            'product_data': product_data,
-            'product_metadata': validated_metadata
+            'product_data': json.loads(product_data),
+            'product_metadata': validated_metadata,
+            'product_image': product_model.image
         }
     }
     return master

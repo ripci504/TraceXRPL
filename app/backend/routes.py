@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, abort, redirect
-from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_nftoken_data
+from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_stage_dict
+from app.api.routes_funcs import gather_product_information
 from app.models.database import Wallet, ProductModel, Product, ProductStages, ProductMetadata
 from app import app
 from werkzeug.utils import secure_filename
@@ -55,11 +56,6 @@ def portfolio(wallet):
 @main.route('/product/<nftokenid>')
 def check_product(nftokenid):
     try:
-        # TEMPORARY DATA GATHERING FUNC
-        product, productmodel, productxrpl, productowner, producthistory, stage_dict, validatedhistory, validatedmetadata = get_nftoken_data(nftokenid)
-        return render_template('product_jinja.html', product=product, productmodel=productmodel, productxrpl=json.loads(productxrpl), productowner=productowner, producthistory=producthistory,\
-                                stage_dict=stage_dict, validatedhistory=validatedhistory, validatedmetadata=validatedmetadata)
+        return render_template('product_jinja_test.html', product=gather_product_information(nftokenid), stage_dict=get_stage_dict(nftokenid))
     except Exception as e:
-        return str(e)
-        # Most likely gathering NFToken from ID failed, can not verify it exists
         abort(404)
