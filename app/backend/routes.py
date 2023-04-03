@@ -56,6 +56,7 @@ def portfolio(wallet):
 @main.route('/product/<nftokenid>')
 def check_product(nftokenid):
     try:
-        return render_template('product_jinja_test.html', product=gather_product_information(nftokenid), stage_dict=get_stage_dict(nftokenid))
+        return render_template('product_jinja.html', product=gather_product_information(nftokenid), stage_dict=get_stage_dict(nftokenid))
     except Exception as e:
         abort(404)
+        
