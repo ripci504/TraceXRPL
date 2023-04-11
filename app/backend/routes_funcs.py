@@ -1,20 +1,12 @@
 from app.models.models import XrpNetwork
 from app import db, app
 from app.models.database import Wallet, Product, ProductStages, ProductModel, ProductMetadata
-from app.helpers.helper_funcs import shrink_nftokenid, shrink_json
-from flask import redirect, request
-import time
-import requests
-import json
-
+from .routes_tasks import new_mint, create_stage_update, create_meta_nft
+from flask import redirect
 
 ### XRPL MODULES:
-from xrpl.models.transactions.nftoken_mint import NFTokenMint, NFTokenMintFlag
-from xrpl.wallet import Wallet as XRPLWallet
 from xrpl.clients import JsonRpcClient
 from xrpl.wallet import generate_faucet_wallet
-from xrpl.utils import hex_to_str, str_to_hex, datetime_to_ripple_time, get_nftoken_id
-from xrpl.transaction import safe_sign_and_autofill_transaction, send_reliable_submission, safe_sign_and_submit_transaction, get_transaction_from_hash
 ###
 
 test_net = XrpNetwork({'domain': 's.altnet.rippletest.net', 'json_rpc': 'https://s.altnet.rippletest.net:51234', 'websocket': 'wss://s.altnet.rippletest.net:51233', 'type': 'testnet' })
@@ -66,44 +58,10 @@ def handle_products_form(request, uuid):
         db.session.commit()
         return redirect('/products/' + uuid)
     elif request.form.get('type') == 'new_mint':
-        product = ProductModel.query.filter_by(uuid=uuid).first()
-        products_minted = Product.query.filter_by(product_uuid=uuid).all()
-        # COUNT PRODUCTS MINTED TO GET MODEL NUMBER
-        x = 0
-        for _ in products_minted:
-            x += 1
-        # INITIATE WALLET
-        database_wallet = Wallet.query.all()
-        client=JsonRpcClient(network.to_dict()['json_rpc'])
-        xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
-        # BUILD DICT URI
-        nftokenobject = {
-            'org': product.org, # MAX 30
-            'product': product.name, # MAX 20
-            'model': x, # MAX 10
-            'creation': int(time.time()) # MAX 12
-        }
-        # CREATE MINT REQUEST
-        mint_tx = NFTokenMint(
-            account=xrplwallet.classic_address,
-            nftoken_taxon=0,
-            flags=NFTokenMintFlag.TF_TRANSFERABLE,
-            uri=shrink_json(nftokenobject)
-        )
-        # SEND MINT REQUEST
-        try:
-            mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
-            mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
-            mint_tx_result = mint_tx_signed.result
-            new_product = Product(product_uuid=uuid, product_name=product.name, nftokenid=get_nftoken_id.get_nftoken_id(mint_tx_result['meta']), transhash=mint_tx_result['hash'], product_stage=product.default_stage)
-            db.session.add(new_product)
-            db.session.commit()
-        except Exception as e:
-            return str(e)
+        task = new_mint.delay(uuid)
         return redirect('/products/' + uuid)
     elif request.form.get('type') == 'next_stage':
         nftokenid = request.form.get('nftokenid')
-        product = ProductModel.query.filter_by(uuid=uuid).first()
         product_minted = Product.query.filter_by(nftokenid=nftokenid).first()
         stages = ProductStages.query.filter_by(product_id=uuid).all()
         x = 0
@@ -112,65 +70,13 @@ def handle_products_form(request, uuid):
         if product_minted.product_stage < x:
             product_minted.product_stage += 1
             db.session.commit()
-            return create_stage_update(product_minted.product_stage, x, nftokenid, uuid)
+            task = create_stage_update.delay(product_minted.product_stage, x, nftokenid, uuid)
+            return redirect('/products/' + uuid)
+        else:
+            return redirect(request.url)
     elif request.form.get('type') == 'create_meta':
-        return create_meta_nft(request, uuid)
-
-def create_meta_nft(request, uuid):
-    nftokenobject = {}
-    metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
-    for x in metadata:
-        nftokenobject[x.meta_name] = request.form.get(x.meta_name)
-    nftokenobject['id']='mta' + shrink_nftokenid(request.form.get('nftokenid'))
-    database_wallet = Wallet.query.all()
-    client=JsonRpcClient(network.to_dict()['json_rpc'])
-    xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
-    
-    mint_tx = NFTokenMint(
-    account=xrplwallet.classic_address,
-    nftoken_taxon=0,
-    flags=NFTokenMintFlag.TF_TRANSFERABLE,
-    uri=shrink_json(nftokenobject)
-    )
-
-    # SEND MINT REQUEST
-    try:
-        mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
-        mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
-        mint_tx_result = mint_tx_signed.result
-    except Exception as e:
-        return str(e)
-    return redirect('/products/' + uuid)
-        
-
-
-
-def create_stage_update(stage, max, id, uuid):
-    # QUERY DB but there will only be one row
-    # This func will take time, use celery 
-    database_wallet = Wallet.query.all()
-    client=JsonRpcClient(network.to_dict()['json_rpc'])
-    xrplwallet = XRPLWallet(seed=database_wallet[0].seed, sequence=0)
-    nftokenobject = {
-        'date': int(time.time()), # MAX 12
-        'stage': stage, # MAX 3
-        'max': max, # MAX 3
-        'id': shrink_nftokenid(id) # MAX 16 (SHRUNK NFTOKENID)
-    }
-    mint_tx = NFTokenMint(
-        account=xrplwallet.classic_address,
-        nftoken_taxon=0,
-        flags=NFTokenMintFlag.TF_TRANSFERABLE,
-        uri=shrink_json(nftokenobject)
-    )
-    # SEND MINT REQUEST
-    try:
-        mint_tx_signed = safe_sign_and_autofill_transaction(transaction=mint_tx, wallet=xrplwallet, client=client)
-        mint_tx_signed = send_reliable_submission(transaction=mint_tx_signed, client=client)
-        mint_tx_result = mint_tx_signed.result
-    except Exception as e:
-        return str(e)
-    return redirect('/products/' + uuid)
+        task = create_meta_nft.delay(request.form, uuid)
+        return redirect('/products/' + uuid)
 
 def get_stage_dict(nftokenid):
     product = Product.query.filter_by(nftokenid=nftokenid).first()

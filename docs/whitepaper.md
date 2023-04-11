@@ -8,7 +8,7 @@ TraceXRPL allows manufacturers to document the lifecycle of their products in an
 
 ### Use Case 1
 
-A consumer purchases, or preorders a bag online, and with their receipt they are able to claim an NFT that represents this bag. As the company produces the bag, each stage of production is represented & minted as an NFT that is connected to the consumers bag/NFT.  Using their NFTokenID, the consumer can then view their product history and authenticity online. 
+A consumer purchases, or preorders a bag online, and with their receipt they are able to claim an NFT that represents this bag. As the company produces the bag, each stage of production is represented and minted as an NFT that is connected to the consumers bag/NFT.  Using their NFTokenID, the consumer can then view their product history and authenticity online. 
 
 ![Authenticity Example](./images/authenticity_example.png)
 

@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, request, abort, redirect
 from app.backend.routes_funcs import generate_wallet, create_product_temp, handle_products_form, get_stage_dict
 from app.api.routes_funcs import gather_product_information
-from app.models.database import Wallet, ProductModel, Product, ProductStages, ProductMetadata
+from app.models.database import ProductModel, Product, ProductStages, ProductMetadata
 from app import app
 from werkzeug.utils import secure_filename
 import os
-import json
 import shortuuid
 
 

@@ -29,4 +29,6 @@ CSRF_SESSION_KEY = uuid.uuid4().hex
 # Secret key for signing cookies
 SECRET_KEY = uuid.uuid4().hex
 
+CELERY_CONFIG = {"broker_url": "redis://redis", "result_backend": "redis://redis"}
+
 static_folder="/static" 

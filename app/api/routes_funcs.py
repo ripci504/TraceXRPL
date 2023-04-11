@@ -1,13 +1,14 @@
-from app.models.database import Wallet, ProductModel, Product, ProductStages, ProductMetadata
+from flask import request
+from app.models.database import ProductModel, Product, ProductStages, ProductMetadata
 from app.models.models import XrpNetwork, URIStageStructure
-from app.helpers.helper_funcs import shrink_nftokenid, expand_nftokenid
+from app.helpers.helper_funcs import shrink_nftokenid
 import requests
 import json
 
 ### XRPL MODULES:
 from xrpl.models.requests import AccountNFTs
 from xrpl.clients import JsonRpcClient
-from xrpl.utils import hex_to_str, str_to_hex
+from xrpl.utils import hex_to_str
 ###
 
 test_net = XrpNetwork({'domain': 's.altnet.rippletest.net', 'json_rpc': 'https://s.altnet.rippletest.net:51234', 'websocket': 'wss://s.altnet.rippletest.net:51233', 'type': 'testnet' })
@@ -108,7 +109,8 @@ def gather_product_information(nftokenid):
             'product_stages': product_stages,
             'product_data': json.loads(product_data),
             'product_metadata': validated_metadata,
-            'product_image': product_model.image
+            'product_image': product_model.image,
+            'product_image_url': request.url_root + 'static/uploads/' + product_model.image
         }
     }
     return master
