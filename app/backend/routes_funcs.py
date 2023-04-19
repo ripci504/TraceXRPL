@@ -82,6 +82,7 @@ def get_stage_dict(nftokenid):
     product = Product.query.filter_by(nftokenid=nftokenid).first()
     stages = ProductStages.query.filter_by(product_id=product.product_uuid).all()
     product_stages_list = []
+    x = 0
     for x, _ in enumerate(stages, 1):
         product_stages_list.append(False)
     if x != 0:
