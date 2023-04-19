@@ -6,7 +6,7 @@ To view our technical design and a more indepth overview of the project, visit t
 
 ## Testing
 
-The Flask webserver uses Celery and Redis for task management. The steps to localy run the project are below.
+The Flask webserver uses Celery and Redis for task management. The steps to locally run the project are below.
 
 1. Install Docker on your machine. You can download the desktop version [here](https://www.docker.com/products/docker-desktop).
 2. Download the project source code

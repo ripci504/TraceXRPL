@@ -24,14 +24,15 @@ Other luxury products, such as watches, have communities of enthusiasts and prof
 
 1. Ability to mint a product as an NFT
 2. Add custom production steps and update a products production status via NFTs
-3. NFTs are all connected and easily queried
+3. Store on-ledger metadata about a product, such as a watches face, band, color, etc.
+4. NFTs are all connected and easily queried
 
 ### To Do List
 
-1. Further develop on-ledger storage to store more metadata about a product, such as a watches face, band, etc.
+1. ~~Further develop on-ledger storage to store more metadata about a product, such as a watches face, band, etc.~~
 2. Finish creating API (most important endpoint will return JSON of all on-chain/off-chain data about a product)
 3. Code refactoring
-4. Conversion to celery for task management
+4. ~~Conversion to celery for task management~~
 5. Create [recommended TXT](https://xrpl.org/nftoken.html#txt-record-format) / .well-known paths
 6. Allow other wallets to claim product NFT
 7. Create business sign-in & create a real UI
