@@ -1,8 +1,4 @@
-
 *.db
-*.pyc
-*.pyc
 app/requirements.txt
 *.jpg
 *.pyc
-app/static/uploads

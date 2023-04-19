@@ -2,8 +2,11 @@ from flask import request
 from app.models.database import ProductModel, Product, ProductStages, ProductMetadata
 from app.models.models import XrpNetwork, URIStageStructure
 from app.helpers.helper_funcs import shrink_nftokenid
+from ..backend.routes_tasks import new_mint, create_stage_update, create_meta_nft
+
 import requests
 import json
+from app import db
 
 ### XRPL MODULES:
 from xrpl.models.requests import AccountNFTs
@@ -114,3 +117,43 @@ def gather_product_information(nftokenid):
         }
     }
     return master
+
+# FORM SUBMIT ALTERNATIVES
+
+def new_stage_route_func(content):
+    stages = ProductStages.query.filter_by(product_id=content['uuid']).all()
+    x = 0
+    for _ in stages:
+        x += 1
+    newstage = ProductStages(product_id=content['uuid'], stage_name=content['stage_name'], stage_number=str(x+1))
+    db.session.add(newstage)
+    db.session.commit()
+    return 'success'
+
+def new_meta_field_func(content):
+    metadata = ProductMetadata.query.filter_by(product_id=content['uuid']).all()
+    x = 0
+    for _ in metadata:
+        x += 1
+    if x >= 5:
+        pass
+        #return redirect('/products/' + uuid)
+    newfield = ProductMetadata(product_id=content['uuid'], meta_name=content['meta_name'])
+    db.session.add(newfield)
+    db.session.commit()
+    return 'success'
+
+def next_stage_func(content):
+    nftokenid = request.form.get('nftokenid')
+    product_minted = Product.query.filter_by(nftokenid=nftokenid).first()
+    stages = ProductStages.query.filter_by(product_id=content['uuid']).all()
+    x = 0
+    for _ in stages:
+        x += 1
+    if product_minted.product_stage < x:
+        product_minted.product_stage += 1
+        db.session.commit()
+        task = create_stage_update.delay(product_minted.product_stage, x, nftokenid, content['uuid'])
+        return 'success'
+    else:
+        return 'failure'

@@ -46,7 +46,7 @@ def handle_products_form(request, uuid):
         db.session.add(newstage)
         db.session.commit()
         return redirect('/products/' + uuid)
-    if request.form.get('type') == 'new_meta':
+    elif request.form.get('type') == 'new_meta':
         metadata = ProductMetadata.query.filter_by(product_id=uuid).all()
         x = 0
         for _ in metadata:
@@ -56,9 +56,6 @@ def handle_products_form(request, uuid):
         newfield = ProductMetadata(product_id=uuid, meta_name=request.form.get('new_meta'))
         db.session.add(newfield)
         db.session.commit()
-        return redirect('/products/' + uuid)
-    elif request.form.get('type') == 'new_mint':
-        task = new_mint.delay(uuid)
         return redirect('/products/' + uuid)
     elif request.form.get('type') == 'next_stage':
         nftokenid = request.form.get('nftokenid')
@@ -74,6 +71,9 @@ def handle_products_form(request, uuid):
             return redirect('/products/' + uuid)
         else:
             return redirect(request.url)
+    elif request.form.get('type') == 'new_mint':
+        task = new_mint.delay(uuid)
+        return redirect('/products/' + uuid)
     elif request.form.get('type') == 'create_meta':
         task = create_meta_nft.delay(request.form, uuid)
         return redirect('/products/' + uuid)
