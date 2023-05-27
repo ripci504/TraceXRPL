@@ -15,9 +15,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.before_first_request(generate_wallet) # func on server initiation
 @main.route('/')
 def index():
+    generate_wallet()
     return redirect('/create_product')
 
 @main.route('/create_product', methods=['POST', 'GET'])
