@@ -103,6 +103,8 @@ def gather_product_information(nftokenid):
     else:
         validated_metadata.pop('type')
         validated_metadata['validating_id'] = validated_metadata.pop('nftokenid')
+
+    
     
     master = {
         'nftokenid': nftokenid,
@@ -110,7 +112,7 @@ def gather_product_information(nftokenid):
         'owner': product_owner,
         'data': {
             'product_stages': product_stages,
-            'product_data': json.loads(product_data),
+            'product_data': json.loads(hex_to_str(product_data)),
             'product_metadata': validated_metadata,
             'product_image': product_model.image,
             'product_image_url': request.url_root + 'static/uploads/' + product_model.image

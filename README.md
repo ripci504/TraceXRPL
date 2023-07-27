@@ -11,5 +11,5 @@ The Flask webserver uses Celery and Redis for task management. The steps to loca
 1. Install Docker on your machine. You can download the desktop version [here](https://www.docker.com/products/docker-desktop).
 2. Download the project source code
 3. Open a terminal in the root of the project
-4. Run `docker compose -f "docker-compose.yml" up -d --build` (compose the docker-compose.yml file)
+4. With Docker Desktop running, execute `docker compose -f "docker-compose.yml" up -d --build` in terminal (compose the docker-compose.yml file)
 5. The server will be hosted at http://localhost:5000/ or http://127.0.0.1:5000/
